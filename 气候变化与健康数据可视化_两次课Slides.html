@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>气候变化与健康数据可视化_两次课</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --bg-soft: #131b33;
+      --card: #1a2442;
+      --text: #e6ecff;
+      --sub: #9cb0db;
+      --accent: #5ac8fa;
+      --accent2: #8b7dff;
+      --ok: #5be49b;
+      --warn: #ffd166;
+      --bad: #ff6b8a;
+      --line: #2b3760;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: radial-gradient(circle at 20% 10%, #18264a, var(--bg) 45%);
+      color: var(--text);
+      overflow: hidden;
+    }
+    .deck {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      padding: 34px 48px 64px;
+      display: none;
+      grid-template-rows: auto auto 1fr;
+      gap: 16px;
+    }
+    .slide.active { display: grid; }
+    h1, h2, h3, p { margin: 0; }
+    .title {
+      font-size: clamp(28px, 3.5vw, 48px);
+      line-height: 1.15;
+      letter-spacing: 0.3px;
+      font-weight: 800;
+    }
+    .subtitle { color: var(--sub); font-size: 18px; }
+
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 12px;
+    }
+    .kpi {
+      background: linear-gradient(145deg, rgba(95,132,255,0.16), rgba(95,132,255,0.05));
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+    }
+    .kpi .num { font-size: 26px; font-weight: 800; color: var(--accent); }
+    .kpi .lab { color: var(--sub); font-size: 13px; margin-top: 6px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
+    .card {
+      background: linear-gradient(160deg, rgba(34,49,86,0.95), rgba(21,30,56,0.95));
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      min-height: 120px;
+      box-shadow: inset 0 0 20px rgba(120,140,255,0.06);
+    }
+    .card h3 { font-size: 18px; margin-bottom: 8px; }
+    .card ul { margin: 0; padding-left: 18px; color: var(--sub); line-height: 1.6; }
+
+    .chip {
+      display: inline-block;
+      margin: 4px 6px 0 0;
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--sub);
+      background: rgba(90,200,250,0.08);
+    }
+
+    svg { width: 100%; height: 100%; }
+    .chart-wrap { height: 100%; min-height: 210px; }
+
+    .footer {
+      position: absolute;
+      bottom: 14px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      color: var(--sub);
+      font-size: 14px;
+      letter-spacing: 0.4px;
+      pointer-events: none;
+    }
+    .hint {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      color: var(--sub);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="deck" id="deck">
+    <div class="hint">←/→、空格、PgUp/PgDn、滚轮 翻页</div>
+
+    <section class="slide active">
+      <h1 class="title">气候变化与健康数据可视化（两次课）</h1>
+      <p class="subtitle">数据基础：温度与流感病例（按周聚合）｜目标：从描述到因果再到政策沟通</p>
+      <div class="grid-2">
+        <div class="card">
+          <h3>课程总览（图文并茂）</h3>
+          <div class="kpi-row">
+            <div class="kpi"><div class="num">2</div><div class="lab">授课次数</div></div>
+            <div class="kpi"><div class="num">8</div><div class="lab">关键图形模板</div></div>
+            <div class="kpi"><div class="num">1</div><div class="lab">小组汇报任务</div></div>
+            <div class="kpi"><div class="num">100%</div><div class="lab">离线可播放</div></div>
+          </div>
+          <p style="margin-top:10px;color:var(--sub);line-height:1.6;">新版统一深色主题、卡片布局与双/三栏排版，并将抽象方法拆解为可讲可练的时间块与可视化模板。</p>
+        </div>
+        <div class="card chart-wrap"><h3>课程路径图</h3><svg id="pathMap"></svg></div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2 class="title">模块流程图：从数据到决策</h2>
+      <p class="subtitle">每一步都对应一个可落地图形产出</p>
+      <div class="grid-3">
+        <div class="card chart-wrap"><h3>模块流程图</h3><svg id="flowChart"></svg></div>
+        <div class="card">
+          <h3>第一课：数据理解与描述</h3>
+          <ul>
+            <li>温度-流感数据清洗与对齐</li>
+            <li>描述性统计 + 时序图 + 空间示意</li>
+            <li>初步发现阈值与季节性</li>
+          </ul>
+          <span class="chip">输出1：趋势图</span><span class="chip">输出2：空间图</span>
+        </div>
+        <div class="card">
+          <h3>第二课：效应建模与政策沟通</h3>
+          <ul>
+            <li>DLNM 思路与阈值解读</li>
+            <li>归因风险与政策情景对比</li>
+            <li>复现性表达与课堂汇报</li>
+          </ul>
+          <span class="chip">输出3：阈值曲线</span><span class="chip">输出4：收益柱图</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2 class="title">第一次课时间轴（90 分钟）</h2>
+      <p class="subtitle">以“可视化驱动提问”为主线</p>
+      <div class="grid-2">
+        <div class="card chart-wrap"><h3>时间块安排</h3><svg id="timeline"></svg></div>
+        <div class="card">
+          <h3>课堂活动</h3>
+          <ul>
+            <li>10' 破冰：气候变化与健康案例</li>
+            <li>25' 数据结构与质量检查</li>
+            <li>25' 趋势图与分组对比</li>
+            <li>20' 空间暴露示意与讨论</li>
+            <li>10' 小结与作业布置</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2 class="title">空间暴露示意图（居住-学校-通勤）</h2>
+      <p class="subtitle">帮助学生理解“暴露不是一个点，而是活动链”</p>
+      <div class="grid-2">
+        <div class="card chart-wrap"><h3>空间暴露示意图</h3><svg id="exposureMap"></svg></div>
+        <div class="card">
+          <h3>讲解重点</h3>
+          <ul>
+            <li>同一天内暴露水平具有时空异质性</li>
+            <li>家庭和学校周边温度/污染贡献不同</li>
+            <li>可视化先于模型，先解释机制再算系数</li>
+          </ul>
+          <p style="color:var(--sub);margin-top:10px;">建议课堂提问：如果学生只用家庭点位，会低估还是高估风险？为什么？</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2 class="title">时间趋势柱线图：温度与流感</h2>
+      <p class="subtitle">柱：每周流感病例；线：周平均温度（示例数据）</p>
+      <div class="grid-2">
+        <div class="card chart-wrap"><h3>趋势图（离线内嵌）</h3><svg id="trendChart"></svg></div>
+        <div class="card">
+          <h3>解读框架</h3>
+          <ul>
+            <li>低温周病例偏高，存在非线性关系</li>
+            <li>季节性峰值与温度谷值错位可讨论滞后</li>
+            <li>为 DLNM 的“温度-滞后-风险”三维结构铺垫</li>
+          </ul>
+          <span class="chip">课堂输出：1 句趋势结论</span>
+          <span class="chip">课堂输出：1 个机制假设</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2 class="title">DLNM 阈值曲线（教学版）</h2>
+      <p class="subtitle">展示相对风险（RR）随温度变化的“U 形/阈值”特征</p>
+      <div class="grid-2">
+        <div class="card chart-wrap"><h3>阈值曲线</h3><svg id="dlnmCurve"></svg></div>
+        <div class="card">
+          <h3>第二课核心概念</h3>
+          <ul>
+            <li>最适温度（MMT）附近风险最低</li>
+            <li>偏离阈值越远，风险上升越快</li>
+            <li>可拓展到滞后维度与累积风险</li>
+          </ul>
+          <p style="color:var(--sub);margin-top:10px;">板书建议：RR(T)=1 仅是参照，并非“没有风险”。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2 class="title">政策收益柱状图</h2>
+      <p class="subtitle">比较不同干预方案的可归因病例减少（教学示意）</p>
+      <div class="grid-2">
+        <div class="card chart-wrap"><h3>政策收益对比</h3><svg id="policyBars"></svg></div>
+        <div class="card">
+          <h3>课堂讨论问题</h3>
+          <ul>
+            <li>短期高成本 vs 长期高收益，如何取舍？</li>
+            <li>公平性：哪些人群收益最大？</li>
+            <li>沟通策略：如何向非技术决策者解释不确定性？</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2 class="title">小组 3 图组合汇报模板</h2>
+      <p class="subtitle">每组 4–6 人，使用统一模板 6 分钟汇报 + 3 分钟答辩</p>
+      <div class="grid-3">
+        <div class="card">
+          <h3>图 1：描述图</h3>
+          <ul>
+            <li>趋势柱线图 + 关键峰值标注</li>
+            <li>回答“发生了什么”</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>图 2：机制图</h3>
+          <ul>
+            <li>空间暴露示意 or 分层比较</li>
+            <li>回答“为什么发生”</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>图 3：行动图</h3>
+          <ul>
+            <li>阈值曲线或政策收益图</li>
+            <li>回答“可以做什么”</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h3>作业与评分导向</h3>
+        <div class="kpi-row">
+          <div class="kpi"><div class="num">40%</div><div class="lab">图形质量与叙事</div></div>
+          <div class="kpi"><div class="num">30%</div><div class="lab">方法与解释一致性</div></div>
+          <div class="kpi"><div class="num">20%</div><div class="lab">政策建议可行性</div></div>
+          <div class="kpi"><div class="num">10%</div><div class="lab">表达与协作</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2 class="title">结课：从“会画图”到“会用图推动决策”</h2>
+      <p class="subtitle">你已经具备一个完整的数据可视化教学闭环</p>
+      <div class="grid-2">
+        <div class="card">
+          <h3>两次课产出清单</h3>
+          <ul>
+            <li>描述趋势图 + 空间暴露图</li>
+            <li>DLNM 阈值图 + 政策收益图</li>
+            <li>小组 3 图组合汇报</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>下一步拓展</h3>
+          <ul>
+            <li>加入湿度、降水、空气污染协变量</li>
+            <li>尝试分年龄段/区域分层可视化</li>
+            <li>将课堂模板迁移到真实政策议题</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer" id="footer">1 / 9</div>
+  </div>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  const footer = document.getElementById('footer');
+  let idx = 0;
+
+  function show(i){
+    idx = (i + slides.length) % slides.length;
+    slides.forEach((s,si)=>s.classList.toggle('active', si===idx));
+    footer.textContent = `${idx+1} / ${slides.length}`;
+  }
+  function next(){ show(idx+1); }
+  function prev(){ show(idx-1); }
+
+  window.addEventListener('keydown', (e)=>{
+    if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)) next();
+    if(['ArrowLeft','PageUp','Backspace'].includes(e.key)) prev();
+  });
+  window.addEventListener('wheel', (e)=>{ e.deltaY>0 ? next() : prev(); }, {passive:true});
+  window.addEventListener('click', (e)=>{ if(e.clientX > window.innerWidth*0.5) next(); else prev(); });
+
+  function line(svg, x1,y1,x2,y2, color='#5ac8fa', w=2, dash=''){
+    const el = document.createElementNS('http://www.w3.org/2000/svg','line');
+    el.setAttribute('x1',x1); el.setAttribute('y1',y1);
+    el.setAttribute('x2',x2); el.setAttribute('y2',y2);
+    el.setAttribute('stroke',color); el.setAttribute('stroke-width',w);
+    if(dash) el.setAttribute('stroke-dasharray',dash);
+    svg.appendChild(el);
+  }
+  function rect(svg,x,y,w,h,fill='none',stroke='#2b3760',rx=8){
+    const el = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    el.setAttribute('x',x); el.setAttribute('y',y);
+    el.setAttribute('width',w); el.setAttribute('height',h);
+    el.setAttribute('fill',fill); el.setAttribute('stroke',stroke); el.setAttribute('rx',rx);
+    svg.appendChild(el);
+  }
+  function text(svg,x,y,t,size=12,color='#e6ecff',anchor='middle'){
+    const el = document.createElementNS('http://www.w3.org/2000/svg','text');
+    el.setAttribute('x',x); el.setAttribute('y',y);
+    el.setAttribute('fill',color); el.setAttribute('font-size',size);
+    el.setAttribute('text-anchor',anchor); el.setAttribute('font-family','Inter, PingFang SC, sans-serif');
+    el.textContent=t; svg.appendChild(el);
+  }
+  function circle(svg,cx,cy,r,fill='#5ac8fa',stroke='none'){
+    const el = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    el.setAttribute('cx',cx); el.setAttribute('cy',cy); el.setAttribute('r',r);
+    el.setAttribute('fill',fill); el.setAttribute('stroke',stroke); svg.appendChild(el);
+  }
+
+  function drawPathMap(){
+    const svg = document.getElementById('pathMap'); svg.setAttribute('viewBox','0 0 600 280');
+    const pts = [[80,190,'数据清洗'],[210,120,'描述可视化'],[340,160,'DLNM阈值'],[480,90,'政策评估']];
+    pts.forEach((p,i)=>{
+      circle(svg,p[0],p[1],22,i===3?'#5be49b':'#5ac8fa');
+      text(svg,p[0],p[1]+4,String(i+1),12,'#0b1020');
+      text(svg,p[0],p[1]+40,p[2],13,'#9cb0db');
+      if(i<pts.length-1) line(svg,p[0]+22,p[1],pts[i+1][0]-22,pts[i+1][1],'#8b7dff',3,'6 5');
+    });
+  }
+
+  function drawFlowChart(){
+    const svg = document.getElementById('flowChart'); svg.setAttribute('viewBox','0 0 520 280');
+    const boxes = [[20,30,'原始温度/流感数据'],[190,30,'清洗与周聚合'],[360,30,'描述统计']
+                 ,[20,150,'空间暴露建模'],[190,150,'DLNM阈值分析'],[360,150,'政策收益沟通']];
+    boxes.forEach(([x,y,t])=>{rect(svg,x,y,140,60,'#18264a');text(svg,x+70,y+35,t,12);});
+    [[160,60,190,60],[330,60,360,60],[90,90,90,150],[260,90,260,150],[430,90,430,150],[160,180,190,180],[330,180,360,180]]
+      .forEach(a=>line(svg,...a,'#5ac8fa',2));
+  }
+
+  function drawTimeline(){
+    const svg = document.getElementById('timeline'); svg.setAttribute('viewBox','0 0 640 280');
+    line(svg,40,150,600,150,'#8b7dff',4);
+    const blocks=[[70,'10m','案例导入'],[180,'25m','数据清洗'],[320,'25m','趋势分析'],[460,'20m','空间示意'],[560,'10m','总结作业']];
+    blocks.forEach(([x,d,t],i)=>{circle(svg,x,150,16,['#5ac8fa','#5be49b','#ffd166','#8b7dff','#ff6b8a'][i]);text(svg,x,120,d,12,'#e6ecff');text(svg,x,190,t,12,'#9cb0db');});
+  }
+
+  function drawExposureMap(){
+    const svg = document.getElementById('exposureMap'); svg.setAttribute('viewBox','0 0 620 300');
+    rect(svg,20,20,580,260,'#12203c');
+    text(svg,70,50,'北',12,'#9cb0db');
+    circle(svg,130,220,14,'#5be49b'); text(svg,130,250,'家庭',12,'#9cb0db');
+    circle(svg,460,90,14,'#ffd166'); text(svg,460,120,'学校',12,'#9cb0db');
+    circle(svg,320,160,10,'#5ac8fa'); text(svg,320,190,'通勤节点',12,'#9cb0db');
+    line(svg,130,220,320,160,'#5ac8fa',3,'5 4'); line(svg,320,160,460,90,'#5ac8fa',3,'5 4');
+    rect(svg,90,180,80,80,'none','#5be49b'); text(svg,130,275,'居住暴露圈',11,'#5be49b');
+    rect(svg,420,50,80,80,'none','#ffd166'); text(svg,460,145,'学校暴露圈',11,'#ffd166');
+  }
+
+  function drawTrend(){
+    const svg = document.getElementById('trendChart'); svg.setAttribute('viewBox','0 0 640 320');
+    const temp=[8,10,12,15,18,23,28,30,29,25,20,14];
+    const flu =[190,170,150,110,80,60,45,50,65,95,140,180];
+    const left=46, top=24, w=560, h=250;
+    rect(svg,left,top,w,h,'none','#2b3760',6);
+    for(let i=0;i<12;i++){
+      const x=left+12+i*(w/12);
+      const bh=flu[i]/200*h;
+      rect(svg,x,top+h-bh,28,bh,'#5ac8fa55','#5ac8fa',4);
+      text(svg,x+14,top+h+18,String(i+1),10,'#9cb0db');
+    }
+    let d='';
+    temp.forEach((t,i)=>{const x=left+26+i*(w/11), y=top+h-(t/35*h); d += (i?'L':'M')+x+' '+y+' '; circle(svg,x,y,3,'#ffd166');});
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path'); path.setAttribute('d',d.trim()); path.setAttribute('fill','none'); path.setAttribute('stroke','#ffd166'); path.setAttribute('stroke-width','2.5'); svg.appendChild(path);
+    text(svg,560,42,'线=温度',11,'#ffd166'); text(svg,560,58,'柱=流感病例',11,'#5ac8fa');
+  }
+
+  function drawDLNM(){
+    const svg=document.getElementById('dlnmCurve'); svg.setAttribute('viewBox','0 0 620 300');
+    const left=50, top=20, w=520, h=230;
+    rect(svg,left,top,w,h,'none','#2b3760');
+    line(svg,left,top+h*0.55,left+w,top+h*0.55,'#2b3760',1,'5 4');
+    let d='';
+    for(let i=0;i<=100;i++){
+      const t=i/100;
+      const x=left+t*w;
+      const temp=-2 + t*38;
+      const rr=1 + 0.0028*Math.pow(temp-22,2);
+      const y=top+h-(rr-0.9)/0.7*h;
+      d+=(i?'L':'M')+x+' '+y+' ';
+    }
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',d.trim()); path.setAttribute('fill','none'); path.setAttribute('stroke','#5be49b'); path.setAttribute('stroke-width','3'); svg.appendChild(path);
+    line(svg,left+24/38*w,top,left+24/38*w,top+h,'#ffd166',2,'6 4');
+    text(svg,left+24/38*w,top+14,'MMT≈24°C',11,'#ffd166');
+    text(svg,80,280,'温度(°C)',11,'#9cb0db','start'); text(svg,16,36,'RR',11,'#9cb0db','start');
+  }
+
+  function drawPolicy(){
+    const svg=document.getElementById('policyBars'); svg.setAttribute('viewBox','0 0 620 300');
+    const plans=[['校园降温改造',18],['高温预警+宣教',11],['弹性作息',8],['综合包',26]];
+    const left=70, top=30, w=500, h=220;
+    rect(svg,left,top,w,h,'none','#2b3760');
+    plans.forEach((p,i)=>{
+      const x=left+30+i*120, bh=p[1]/30*h;
+      rect(svg,x,top+h-bh,70,bh,['#5ac8fa','#8b7dff','#ffd166','#5be49b'][i],'#0000',8);
+      text(svg,x+35,top+h+18,p[0],10,'#9cb0db');
+      text(svg,x+35,top+h-bh-8,p[1]+'%',12,'#e6ecff');
+    });
+    text(svg,80,20,'可归因病例减少比例',11,'#9cb0db','start');
+  }
+
+  drawPathMap(); drawFlowChart(); drawTimeline(); drawExposureMap(); drawTrend(); drawDLNM(); drawPolicy();
+</script>
+</body>
+</html>
